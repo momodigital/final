@@ -1,10 +1,10 @@
 # predictor.py
 """
-🏆 FINAL PREDICTOR - CORE LOGIC (Clean + Reproducible Random Seed)
+🏆 FINAL PREDICTOR - CORE LOGIC (Clean + Reproducible)
 """
 
 import os
-import random
+import random               # ← Baris ini WAJIB ada!
 from collections import Counter
 from typing import List, Dict, Any, Optional
 import functools
@@ -205,7 +205,6 @@ class TogelPredictor:
             if upto >= r: return digit
         return candidates[-1][0]
 
-    # ================== TOP FILTERED ==================
     def generate_top_2d_filtered(self, limit: int = 80) -> List[str]:
         ct5_set = set(self.get_ct_5d())
         kepala_set = set(self.get_top_by_position('KEPALA', 10, use_mistik=True))
