@@ -1,6 +1,6 @@
 # predictor.py
 """
-🏆 FINAL PREDICTOR - CORE LOGIC (Clean + Reproducible Random Seed)
+🏆 FINAL PREDICTOR - CORE LOGIC (Cleaned for Streamlit)
 """
 
 import os
@@ -22,23 +22,27 @@ except ImportError:
     raise ImportError("❌ libsql-client belum terinstall! Jalankan: pip install libsql-client")
 
 
+class Colors:
+    """Hanya untuk internal, tidak dipakai di Streamlit"""
+    RESET = '\033[0m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+
+
 class TogelPredictor:
     def __init__(self, data: List[Dict[str, Any]]):
         self.raw_data = data
         self.results: List[str] = [d['result'] for d in data 
                                   if isinstance(d.get('result'), str) and len(d['result']) == 4]
         self._cache: Dict[str, Any] = {}
-        
-        # ================== RANDOM SEED FIX ==================
-        if self.results:
-            seed_value = sum(ord(c) for c in ''.join(self.results[:100])) % (10**9)
-            random.seed(seed_value)
 
     @functools.lru_cache(maxsize=32)
     def _get_digit_counter(self, position: Optional[str] = None) -> Counter:
-        if not self.results: return Counter()
+        if not self.results:
+            return Counter()
         if position is None:
             return Counter(d for num in self.results for d in num)
+        
         idx_map = {'KOP': 1, 'KEPALA': 2, 'EKOR': 3}
         idx = idx_map.get(position)
         return Counter(num[idx] for num in self.results) if idx is not None else Counter()
@@ -46,10 +50,11 @@ class TogelPredictor:
     def get_top_digits(self, limit: int = 6) -> List[str]:
         if len(self.results) < 5:
             return [str(i) for i in range(10)][:limit]
-        weights = {'AS':0.15, 'KOP':0.15, 'KEPALA':0.20, 'EKOR':0.50}
+        
+        weights = {'AS': 0.15, 'KOP': 0.15, 'KEPALA': 0.20, 'EKOR': 0.50}
         weighted = Counter()
         for pos, w in weights.items():
-            idx = {'AS':0, 'KOP':1, 'KEPALA':2, 'EKOR':3}[pos]
+            idx = {'AS': 0, 'KOP': 1, 'KEPALA': 2, 'EKOR': 3}[pos]
             for num in self.results:
                 weighted[num[idx]] += w
         return [d for d, _ in weighted.most_common(limit)]
@@ -66,29 +71,39 @@ class TogelPredictor:
         return list(dict.fromkeys(IDX.get(d, d) for d in top_digits))
 
     def get_ct_5d(self) -> str:
-        if 'ct5' in self._cache: return self._cache['ct5']
+        if 'ct5' in self._cache:
+            return self._cache['ct5']
+        
         digits_w = []
         for i, num in enumerate(self.results):
             d = num[3]
             weight = 3.0 if i < 40 else 1.0
             digits_w.extend([d] * int(weight * 10))
+        
         top3 = [d for d, _ in Counter(digits_w).most_common(10)]
         top_global = self.get_top_digits(10)
         mistik = self.get_mistik(top_global)['all_mistik']
         index_r = self.get_index(top_global)
+        
         combined, seen = [], set()
         for d in top3 + mistik + index_r:
             if d not in seen:
                 seen.add(d)
                 combined.append(d)
-            if len(combined) == 5: break
+            if len(combined) == 5:
+                break
         result = ''.join(combined)
         self._cache['ct5'] = result
         return result
 
     def get_ct_3d(self) -> str:
-        if 'ct3' in self._cache: return self._cache['ct3']
-        recent = self.results[:20] or self.results
+        if 'ct3' in self._cache:
+            return self._cache['ct3']
+
+        recent = self.results[:20]
+        if len(recent) < 10:
+            recent = self.results
+
         kepala_weight = Counter()
         ekor_weight = Counter()
         for i, num in enumerate(recent):
@@ -99,8 +114,8 @@ class TogelPredictor:
         digits_w = []
         for i, num in enumerate(self.results):
             base_weight = 3.0 if i < 40 else 1.0
-            kep_boost = kepala_weight.get(num[2], 0) * 1.8
-            eko_boost = ekor_weight.get(num[3], 0) * 1.6
+            kep_boost = kepala_weight[num[2]] * 1.8
+            eko_boost = ekor_weight[num[3]] * 1.6
             digits_w.extend([num[2]] * int(base_weight * kep_boost))
             digits_w.extend([num[3]] * int(base_weight * eko_boost))
 
@@ -117,8 +132,10 @@ class TogelPredictor:
                 if d not in seen:
                     seen.add(d)
                     combined.append(d)
-                if len(combined) == 5: break
-            if len(combined) == 5: break
+                if len(combined) == 5:
+                    break
+            if len(combined) == 5:
+                break
 
         result = ''.join(combined[:4])
         self._cache['ct3'] = result
@@ -135,6 +152,7 @@ class TogelPredictor:
             recent_ekor = Counter(num[3] for num in recent)
             for d, count in recent_ekor.items():
                 freq[d] += count * 2.5
+
             ct5 = set(self.get_ct_5d())
             ct3 = set(self.get_ct_3d())
             for d in ct5 | ct3:
@@ -150,20 +168,26 @@ class TogelPredictor:
         return [d for d, _ in freq.most_common(15)][:limit]
 
     def generate_bbfs_8d(self) -> List[str]:
-        if 'bbfs' in self._cache: return self._cache['bbfs']
+        if 'bbfs' in self._cache:
+            return self._cache['bbfs']
+        
         top6 = self.get_top_digits(6)
         mistik = self.get_mistik(top6)['all_mistik']
         index_r = self.get_index(top6)
+        
         cand = Counter()
         cand.update({d:100 for d in (top6 + mistik + index_r)[:6]})
         cand.update({d:90 for d in top6[:4]})
         cand.update({d:80 for d in top6})
         cand.update({d:70 for d in mistik})
         cand.update({d:60 for d in index_r})
+        
         res = [d for d, _ in cand.most_common(20)]
         for i in range(10):
             d = str(i)
-            if d not in res and len(res) < 8: res.append(d)
+            if d not in res and len(res) < 8:
+                res.append(d)
+        
         result = res[:8]
         self._cache['bbfs'] = result
         return result
@@ -171,7 +195,7 @@ class TogelPredictor:
     def generate_bbfs_plus_one(self, bbfs_8d: List[str]) -> Dict[str, Any]:
         used = set(bbfs_8d)
         freq = self._get_digit_counter()
-        candidates = [(d, freq.get(d,0)) for d in '0123456789' if d not in used]
+        candidates = [(d, freq.get(d, 0)) for d in '0123456789' if d not in used]
         plus = max(candidates, key=lambda x: x[1])[0] if candidates else '0'
         return {'bbfs': bbfs_8d, 'plus': plus}
 
@@ -182,7 +206,8 @@ class TogelPredictor:
             if d not in seen:
                 seen.add(d)
                 combined.append(d)
-            if len(combined) == 8: break
+            if len(combined) == 8:
+                break
         for i in range(10):
             d = str(i)
             if d not in seen and len(combined) < 8:
@@ -192,7 +217,7 @@ class TogelPredictor:
     def _get_weighted_candidates(self, digits: List[str], boost: List[str] = None) -> List[tuple]:
         freq = self._get_digit_counter()
         boost_set = set(boost or [])
-        return [(d, max(freq.get(d,0)*10 + (150 if d in boost_set else 0) + 
+        return [(d, max(freq.get(d, 0)*10 + (150 if d in boost_set else 0) + 
                         (80 if d in self.get_ct_5d() else 0), 10)) 
                 for d in digits]
 
@@ -202,21 +227,29 @@ class TogelPredictor:
         upto = 0
         for digit, weight in candidates:
             upto += weight
-            if upto >= r: return digit
+            if upto >= r:
+                return digit
         return candidates[-1][0]
 
+    # ================== TOP 2D, 3D, 4D ==================
     def generate_top_2d_filtered(self, limit: int = 80) -> List[str]:
         ct5_set = set(self.get_ct_5d())
         kepala_set = set(self.get_top_by_position('KEPALA', 10, use_mistik=True))
         ekor_set = set(self.get_top_by_position('EKOR', 10, use_mistik=True))
+
         candidates = []
         for i in range(100):
             num = f"{i:02d}"
             d1, d2 = num[0], num[1]
-            if d1 not in ct5_set and d2 not in ct5_set: continue
-            if d1 not in kepala_set or d2 not in ekor_set: continue
-            score = (40 if d1 in ct5_set else 0) + (40 if d2 in ct5_set else 0)
+            if d1 not in ct5_set and d2 not in ct5_set:
+                continue
+            if d1 not in kepala_set or d2 not in ekor_set:
+                continue
+            score = 0
+            if d1 in ct5_set: score += 40
+            if d2 in ct5_set: score += 40
             candidates.append((num, score))
+        
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [x[0] for x in candidates[:limit]]
 
@@ -235,10 +268,11 @@ class TogelPredictor:
         candidates = []
         seen = set()
         for _ in range(3000):
-            head = self.weighted_choice(self._get_weighted_candidates(list(strong_head)))
+            head = self.weighted_choice(self._get_weighted_candidates(list(strong_head), list(ct5_set)))
             tail2d = random.choice(top2d[:35])
             combo = head + tail2d
-            if combo in seen: continue
+            if combo in seen:
+                continue
             seen.add(combo)
             score = 0
             if head in ct5_set: score += 45
@@ -248,10 +282,13 @@ class TogelPredictor:
                 if d in ct5_set: score += 35
                 elif d in mistik: score += 20
                 elif d in index_r: score += 18
-            if len(set(combo) & ct5_set) >= 2: score += 35
+            if len(set(combo) & ct5_set) >= 2:
+                score += 35
             if score >= 75:
                 candidates.append((combo, score))
-            if len(candidates) >= limit * 4: break
+            if len(candidates) >= limit * 4:
+                break
+        
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [x[0] for x in candidates[:limit]]
 
@@ -270,12 +307,13 @@ class TogelPredictor:
         candidates = []
         seen = set()
         for _ in range(4000):
-            d1 = self.weighted_choice(self._get_weighted_candidates(as_candidates))
-            d2 = self.weighted_choice(self._get_weighted_candidates(list(strong_set)))
-            d3 = self.weighted_choice(self._get_weighted_candidates(list(strong_set)))
-            d4 = self.weighted_choice(self._get_weighted_candidates(list(strong_set)))
+            d1 = self.weighted_choice(self._get_weighted_candidates(as_candidates, list(ct5_set)))
+            d2 = self.weighted_choice(self._get_weighted_candidates(list(strong_set), list(ct5_set)))
+            d3 = self.weighted_choice(self._get_weighted_candidates(list(strong_set), list(ct5_set)))
+            d4 = self.weighted_choice(self._get_weighted_candidates(list(strong_set), list(ct5_set)))
             combo = d1 + d2 + d3 + d4
-            if combo in seen: continue
+            if combo in seen:
+                continue
             seen.add(combo)
             score = sum(1 for d in combo if d in ct5_set) * 45
             score += sum(1 for d in combo if d in mistik) * 28
@@ -286,19 +324,23 @@ class TogelPredictor:
             if len(set(combo)) < 3: score -= 80
             if score >= 130:
                 candidates.append((combo, score))
-            if len(candidates) >= limit * 5: break
+            if len(candidates) >= limit * 5:
+                break
+        
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [x[0] for x in candidates[:limit]]
 
     def analyze_history(self, limit: int = 10) -> List[Dict]:
-        if len(self.raw_data) < limit + 5: return []
+        if len(self.raw_data) < limit + 5:
+            return []
         history = []
         for i in range(limit):
             test = self.raw_data[i]
             train = self.raw_data[i+1:i+11]
             pred = TogelPredictor(train)
             actual = test.get('result', '')
-            if len(actual) != 4: continue
+            if len(actual) != 4:
+                continue
 
             eko_pred = set(pred.get_top_by_position('EKOR', 10, use_mistik=True) + 
                           list(pred.get_ct_5d()) + list(pred.get_ct_3d()))
@@ -316,7 +358,8 @@ class TogelPredictor:
         return history
 
     def calculate_accuracy(self, history: List[Dict]) -> Dict[str, float]:
-        if not history: return {"overall": 0.0}
+        if not history:
+            return {"overall": 0.0}
         ct5 = sum(1 for h in history if h['ct5_hit']) / len(history) * 100
         ct3 = sum(1 for h in history if h['ct3_hit']) / len(history) * 100
         bbfs = sum(1 for h in history if h['bbfs_hit']) / len(history) * 100
