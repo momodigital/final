@@ -38,7 +38,7 @@ with st.sidebar:
         "Toto Macau 16", "Toto Macau 19", "Toto Macau 22", "pcso", "singapore"
     ]
     
-    market_name = st.selectbox("Pilih Pasaran", MARKET_NAMES, index=8)  # default Hongkong Pools
+    market_name = st.selectbox("Pilih Pasaran", MARKET_NAMES, index=8)
     data_limit = st.slider("Jumlah Data Historis", 50, 200, 120, step=10)
     
     st.markdown("---")
@@ -82,7 +82,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                 
                 with tab1:
                     top2d = predictor.generate_top_2d_filtered(60)
-                    st.write(" | ".join(top2d[:55]))
+                    st.write("*".join(top2d[:55]))   # ← Diubah jadi * tanpa spasi
                 
                 with tab2:
                     top3d = predictor.generate_top_3d_filtered(15)
@@ -140,7 +140,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
    EKOR    : {predictor.get_unique_8d(predictor.get_top_by_position('EKOR',8), predictor.get_top_by_position('EKOR',8,True))}
 
 🔥 TOP 2D
-{" | ".join(top2d[:60])}
+{"*".join(top2d[:60])}
 
 🔥 TOP 3D
 {" ".join(top3d)}
@@ -161,6 +161,5 @@ Semoga Beruntung! 🍀
                 
         except Exception as e:
             st.error(f"❌ Terjadi kesalahan: {str(e)}")
-            st.info("Cek apakah Environment Variables TURSO sudah benar di Streamlit Cloud.")
 
 st.caption("Made with ❤️ | Share link ini ke temanmu!")
