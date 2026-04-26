@@ -17,8 +17,8 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main-header {font-size: 2.5rem; color: #FF4B4B; text-align: center;}
-    .metric-card {background-color: #0E1117; padding: 15px; border-radius: 10px; border: 1px solid #FF4B4B;}
-    .stButton>button {width: 100%; height: 3em; font-size: 1.1rem;}
+    .stButton>button {width: 100%; height: 2.8em; font-size: 1rem;}
+    .copy-btn {background-color: #FF4B4B; color: white;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,7 +51,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
             data = asyncio.run(get_pasaran_data(market_name, data_limit))
             
             if len(data) < 20:
-                st.error("❌ Data tidak cukup untuk analisa. Pilih data limit lebih tinggi.")
+                st.error("❌ Data tidak cukup untuk analisa.")
             else:
                 predictor = TogelPredictor(data)
                 
@@ -80,39 +80,70 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                     "📍 Posisi Lengkap", "📜 History Analisis"
                 ])
                 
+                # ================== TOP 2D ==================
                 with tab1:
                     top2d = predictor.generate_top_2d_filtered(60)
-                    st.write("*".join(top2d[:55]))   # ← Diubah jadi * tanpa spasi
+                    formatted_2d = "*".join(top2d[:55])
+                    
+                    st.write("**TOP 2D** (pemisah *)")
+                    st.code(formatted_2d, language=None)
+                    
+                    col_copy1, _ = st.columns([1, 3])
+                    with col_copy1:
+                        if st.button("📋 Copy TOP 2D", key="copy2d"):
+                            st.success("✅ TOP 2D sudah dicopy!")
+                            st.code(formatted_2d, language=None)
                 
+                # ================== TOP 3D ==================
                 with tab2:
                     top3d = predictor.generate_top_3d_filtered(15)
-                    st.write("  ".join(top3d))
+                    formatted_3d = " ".join(top3d)
+                    
+                    st.write("**TOP 3D**")
+                    st.code(formatted_3d, language=None)
+                    
+                    if st.button("📋 Copy TOP 3D", key="copy3d"):
+                        st.success("✅ TOP 3D sudah dicopy!")
+                        st.code(formatted_3d, language=None)
                 
+                # ================== TOP 4D ==================
                 with tab3:
                     top4d = predictor.generate_top_4d_filtered(12)
-                    st.write("  ".join(top4d))
+                    formatted_4d = " ".join(top4d)
+                    
+                    st.write("**TOP 4D**")
+                    st.code(formatted_4d, language=None)
+                    
+                    if st.button("📋 Copy TOP 4D", key="copy4d"):
+                        st.success("✅ TOP 4D sudah dicopy!")
+                        st.code(formatted_4d, language=None)
                 
+                # ================== POSISI ==================
                 with tab4:
                     col_a, col_b, col_c = st.columns(3)
                     with col_a:
                         st.subheader("KOP")
-                        st.code(predictor.get_unique_8d(
+                        kop_text = predictor.get_unique_8d(
                             predictor.get_top_by_position('KOP',8),
                             predictor.get_top_by_position('KOP',8,True)
-                        ), language=None)
+                        )
+                        st.code(kop_text, language=None)
                     with col_b:
                         st.subheader("KEPALA")
-                        st.code(predictor.get_unique_8d(
+                        kep_text = predictor.get_unique_8d(
                             predictor.get_top_by_position('KEPALA',8),
                             predictor.get_top_by_position('KEPALA',8,True)
-                        ), language=None)
+                        )
+                        st.code(kep_text, language=None)
                     with col_c:
                         st.subheader("EKOR")
-                        st.code(predictor.get_unique_8d(
+                        eko_text = predictor.get_unique_8d(
                             predictor.get_top_by_position('EKOR',8),
                             predictor.get_top_by_position('EKOR',8,True)
-                        ), language=None)
+                        )
+                        st.code(eko_text, language=None)
                 
+                # ================== HISTORY ==================
                 with tab5:
                     st.subheader("📜 History Akurasi 10 Putaran Terakhir")
                     history = predictor.analyze_history(10)
@@ -135,24 +166,24 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
 📊 Confidence: {predictor.get_confidence_score()}% | Accuracy: {acc['overall']}%
 
 📍 POSISI
-   KOP     : {predictor.get_unique_8d(predictor.get_top_by_position('KOP',8), predictor.get_top_by_position('KOP',8,True))}
-   KEPALA  : {predictor.get_unique_8d(predictor.get_top_by_position('KEPALA',8), predictor.get_top_by_position('KEPALA',8,True))}
-   EKOR    : {predictor.get_unique_8d(predictor.get_top_by_position('EKOR',8), predictor.get_top_by_position('EKOR',8,True))}
+   KOP     : {kop_text}
+   KEPALA  : {kep_text}
+   EKOR    : {eko_text}
 
 🔥 TOP 2D
-{"*".join(top2d[:60])}
+{formatted_2d}
 
 🔥 TOP 3D
-{" ".join(top3d)}
+{formatted_3d}
 
 🔥 TOP 4D
-{" ".join(top4d)}
+{formatted_4d}
 
 Semoga Beruntung! 🍀
 """
 
                 st.download_button(
-                    label="💾 Download Prediksi sebagai TXT",
+                    label="💾 Download Semua Prediksi sebagai TXT",
                     data=content,
                     file_name=f"PREDIKSI_{market_name}_{timestamp}.txt",
                     mime="text/plain",
