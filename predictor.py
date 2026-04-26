@@ -1,10 +1,10 @@
 # predictor.py
 """
-🏆 FINAL PREDICTOR - CORE LOGIC (Clean + Reproducible)
+🏆 FINAL PREDICTOR - CORE LOGIC (Clean + Reproducible Random Seed)
 """
 
 import os
-import random               # ← Baris ini WAJIB ada!
+import random
 from collections import Counter
 from typing import List, Dict, Any, Optional
 import functools
