@@ -30,7 +30,6 @@ class TogelPredictor:
         self._cache: Dict[str, Any] = {}
         
         # ================== RANDOM SEED FIX ==================
-        # Agar hasil TOP 3D & TOP 4D sama persis jika data historis sama
         if self.results:
             seed_value = sum(ord(c) for c in ''.join(self.results[:100])) % (10**9)
             random.seed(seed_value)
@@ -206,7 +205,7 @@ class TogelPredictor:
             if upto >= r: return digit
         return candidates[-1][0]
 
-    # ================== TOP 2D, 3D, 4D ==================
+    # ================== TOP FILTERED ==================
     def generate_top_2d_filtered(self, limit: int = 80) -> List[str]:
         ct5_set = set(self.get_ct_5d())
         kepala_set = set(self.get_top_by_position('KEPALA', 10, use_mistik=True))
