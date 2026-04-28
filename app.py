@@ -145,7 +145,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                 
                 # ================== HISTORY ==================
                 with tab5:
-                    st.subheader("📜 History Akurasi 10 Putaran Terakhir")
+                    st.subheader("📜 Akurasi 10 Putaran Terakhir")
                     history = predictor.analyze_history(10)
                     if history:
                         df = pd.DataFrame(history)
