@@ -193,4 +193,4 @@ Semoga Beruntung! 🍀
         except Exception as e:
             st.error(f"❌ Terjadi kesalahan: {str(e)}")
 
-st.caption("Khusus buat Pejuang Rupiah Toto ❤️ | UPS & MJP!")
+st.caption("Khusus buat Pejuang 234D ❤️ | UPS & MJP!")
