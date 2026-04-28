@@ -7,7 +7,7 @@ from predictor import TogelPredictor, get_pasaran_data
 
 # ================== CONFIG ==================
 st.set_page_config(
-    page_title="🏆 Final Predictor v3.3",
+    page_title="🏆 Prediksi Malas v3.3",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -22,8 +22,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🏆 FINAL PREDICTOR v3.3")
-st.markdown("**Top 2D (CT5D + KE) + Top 3D/4D dengan Mistik & Index** — Lebih Ketat & Akurat")
+st.title("🏆 PREDIKSI MALAS v3.3")
+st.markdown("**Top 2D (CT5D + KE) + Top 3D/4D dengan Mistik & Index** — Banyak angka - Banyak peluang")
 
 # ================== SIDEBAR ==================
 with st.sidebar:
@@ -193,4 +193,4 @@ Semoga Beruntung! 🍀
         except Exception as e:
             st.error(f"❌ Terjadi kesalahan: {str(e)}")
 
-st.caption("Made with ❤️ | Share link ini ke temanmu!")
+st.caption("Khusus buat Pejuang Rupiah Toto ❤️ | UPS & MJP!")
