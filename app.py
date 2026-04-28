@@ -102,7 +102,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                     st.write("**TOP 3D**")
                     st.code(formatted_3d, language=None)
                     
-                    if st.button("📋 Copy TOP 3D", key="copy3d"):
+                    if st.button("📋 Copy TOP 3D (bb lebih baik)", key="copy3d"):
                         st.success("✅ TOP 3D sudah dicopy!")
                         st.code(formatted_3d, language=None)
                 
@@ -114,7 +114,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                     st.write("**TOP 4D**")
                     st.code(formatted_4d, language=None)
                     
-                    if st.button("📋 Copy TOP 4D", key="copy4d"):
+                    if st.button("📋 Copy TOP 4D (bb lebih baik)", key="copy4d"):
                         st.success("✅ TOP 4D sudah dicopy!")
                         st.code(formatted_4d, language=None)
                 
