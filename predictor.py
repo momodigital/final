@@ -339,34 +339,31 @@ class TogelPredictor:
             pred = TogelPredictor(train)
             actual = test.get('result', '')
             
-            if len(actual) != 4:
-                continue
+            if len(actual) != 4: continue
 
-            bbfs_set = set(pred.generate_bbfs_8d())
-            kepala_actual = actual[2]   # Kepala
-            ekor_actual = actual[3]     # Ekor
+            bbfs_8d = pred.generate_bbfs_8d()
+            plus_one = pred.generate_bbfs_plus_one(bbfs_8d)['plus']
+            bbfs_full_set = set(bbfs_8d + [plus_one])   # ← 9 digit
 
-            # Logika Baru sesuai permintaan
-            kepala_hit = kepala_actual in bbfs_set
-            ekor_hit = ekor_actual in bbfs_set
-            total_digit_hit = sum(1 for d in actual if d in bbfs_set)
+            kepala_actual = actual[2]
+            ekor_actual = actual[3]
 
-            bbfs_pass = kepala_hit and ekor_hit and total_digit_hit >= 2
+            kepala_hit = kepala_actual in bbfs_full_set
+            ekor_hit = ekor_actual in bbfs_full_set
+            total_hits = sum(1 for d in actual if d in bbfs_full_set)
+
+            bbfs_pass = kepala_hit and ekor_hit and total_hits >= 2
 
             history.append({
                 'tanggal': str(test.get('tanggal', ''))[:10],
                 'result': actual,
-                'ct5_hit': any(d in actual for d in pred.get_ct_5d()),
-                'ct3_hit': any(d in actual for d in pred.get_ct_3d()),
-                'bbfs_hit': bbfs_pass,                    # ← Logika baru
+                'bbfs_hit': bbfs_pass,
                 'bbfs_kepala_hit': kepala_hit,
                 'bbfs_ekor_hit': ekor_hit,
-                'bbfs_total_hits': total_digit_hit,       # Bonus info
-                'kop_hit': actual[1] in pred.get_top_by_position('KOP', 8, True),
-                'kepala_hit': actual[2] in pred.get_top_by_position('KEPALA', 8, True),
-                'ekor_hit': ekor_actual in set(pred.generate_bbfs_8d() + 
-                                               list(pred.get_ct_5d()) + 
-                                               list(pred.get_ct_3d())),
+                'bbfs_total_hits': total_hits,
+                'bbfs_8d': ''.join(bbfs_8d),
+                'bbfs_plus': plus_one,
+                # ... method lain
             })
         return history
 
