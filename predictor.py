@@ -135,8 +135,8 @@ class TogelPredictor:
         return self._strong_pairs
 
     # ====================== BBFS OPTIMIZED ======================
-    def generate_bbfs_8d(self) -> List[str]:
-        if 'bbfs_improved' in self._cache:
+    def generate_bbfs_8d(self, force_recalculate: bool = False) -> List[str]:
+        if not force_recalculate and 'bbfs_improved' in self._cache:
             return self._cache['bbfs_improved']
 
         top_global = self.get_top_digits(12)
