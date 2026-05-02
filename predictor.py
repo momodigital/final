@@ -1,6 +1,6 @@
 """
-🏆 FINAL PREDICTOR - FULL ENHANCED VERSION
-Akurasi BBFS Ditingkatkan + Semua Method Asli
+🏆 FINAL PREDICTOR - FULL ENHANCED VERSION (FIXED)
+Error 'get_unique_8d' sudah diperbaiki
 """
 
 import os
@@ -123,7 +123,7 @@ class TogelPredictor:
         self._cache['ct3'] = result
         return result
 
-    # ====================== HELPER BARU ======================
+    # ====================== HELPER ======================
     def get_strong_pairs(self):
         if self._strong_pairs is not None: return self._strong_pairs
         pairs = Counter()
@@ -151,6 +151,22 @@ class TogelPredictor:
             if upto >= r:
                 return digit
         return candidates[-1][0]
+
+    def get_unique_8d(self, list1: List[str], list2: List[str]) -> str:
+        """Method yang menyebabkan error - sudah ditambahkan"""
+        seen = set()
+        combined = []
+        for d in list1 + list2:
+            if d not in seen:
+                seen.add(d)
+                combined.append(d)
+            if len(combined) == 8:
+                break
+        for i in range(10):
+            d = str(i)
+            if d not in seen and len(combined) < 8:
+                combined.append(d)
+        return ''.join(combined[:8])
 
     # ====================== BBFS IMPROVED ======================
     def generate_bbfs_8d(self) -> List[str]:
@@ -198,7 +214,7 @@ class TogelPredictor:
         self._cache['bbfs_improved'] = result
         return result
 
-    # ====================== METHOD ASLI (Full) ======================
+    # ====================== METHOD ASLI LAINNYA ======================
     def generate_bbfs_plus_one(self, bbfs_8d: List[str]) -> Dict[str, Any]:
         used = set(bbfs_8d)
         freq = self._get_digit_counter()
