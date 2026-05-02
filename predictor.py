@@ -159,8 +159,8 @@ class TogelPredictor:
         for d in '0123456789':
             s = 0.0
             s += freq_recency[d] * 4.5
-            s += ekor_freq[d] * 3.8
-            s += kepala_freq[d] * 3.2
+            s += ekor_freq[d] * 5.5
+            s += kepala_freq[d] * 4.8
             s += 85 if d in ct5_set else 0
             s += 55 if d in ct3_set else 0
             s += 40 if d in mistik else 0
