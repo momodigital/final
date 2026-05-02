@@ -147,7 +147,7 @@ class TogelPredictor:
 
         freq_recency = Counter()
         for i, num in enumerate(self.results[:150]):
-            weight = 10.0 * (0.94 ** i)
+            weight = 15.0 * (0.88 ** i)
             for d in num:
                 freq_recency[d] += weight
 
