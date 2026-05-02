@@ -329,33 +329,61 @@ class TogelPredictor:
         return [x[0] for x in candidates[:limit]]
 
     def analyze_history(self, limit: int = 10) -> List[Dict]:
-        if len(self.raw_data) < limit + 5: return []
+        if len(self.raw_data) < limit + 5:
+            return []
+        
         history = []
         for i in range(limit):
             test = self.raw_data[i]
             train = self.raw_data[i+1:i+11]
             pred = TogelPredictor(train)
             actual = test.get('result', '')
-            if len(actual) != 4: continue
-            eko_pred = set(pred.generate_bbfs_8d() + list(pred.get_ct_5d()) + list(pred.get_ct_3d()))
+            
+            if len(actual) != 4:
+                continue
+
+            bbfs_set = set(pred.generate_bbfs_8d())
+            kepala_actual = actual[2]   # Kepala
+            ekor_actual = actual[3]     # Ekor
+
+            # Logika Baru sesuai permintaan
+            kepala_hit = kepala_actual in bbfs_set
+            ekor_hit = ekor_actual in bbfs_set
+            total_digit_hit = sum(1 for d in actual if d in bbfs_set)
+
+            bbfs_pass = kepala_hit and ekor_hit and total_digit_hit >= 2
+
             history.append({
-                'tanggal': str(test.get('tanggal',''))[:10],
+                'tanggal': str(test.get('tanggal', ''))[:10],
                 'result': actual,
                 'ct5_hit': any(d in actual for d in pred.get_ct_5d()),
                 'ct3_hit': any(d in actual for d in pred.get_ct_3d()),
-                'bbfs_hit': any(d in actual for d in pred.generate_bbfs_8d()),
-                'kop_hit': actual[1] in pred.get_top_by_position('KOP',8,True),
-                'kepala_hit': actual[2] in pred.get_top_by_position('KEPALA',8,True),
-                'ekor_hit': actual[3] in eko_pred,
+                'bbfs_hit': bbfs_pass,                    # ← Logika baru
+                'bbfs_kepala_hit': kepala_hit,
+                'bbfs_ekor_hit': ekor_hit,
+                'bbfs_total_hits': total_digit_hit,       # Bonus info
+                'kop_hit': actual[1] in pred.get_top_by_position('KOP', 8, True),
+                'kepala_hit': actual[2] in pred.get_top_by_position('KEPALA', 8, True),
+                'ekor_hit': ekor_actual in set(pred.generate_bbfs_8d() + 
+                                               list(pred.get_ct_5d()) + 
+                                               list(pred.get_ct_3d())),
             })
         return history
 
     def calculate_accuracy(self, history: List[Dict]) -> Dict[str, float]:
-        if not history: return {"overall": 0.0}
+        if not history:
+            return {"overall": 0.0, "bbfs": 0.0}
+        
         ct5 = sum(1 for h in history if h['ct5_hit']) / len(history) * 100
         ct3 = sum(1 for h in history if h['ct3_hit']) / len(history) * 100
         bbfs = sum(1 for h in history if h['bbfs_hit']) / len(history) * 100
-        return {"overall": round((ct5 + ct3 + bbfs) / 3, 1)}
+        
+        return {
+            "overall": round((ct5 + ct3 + bbfs) / 3, 1),
+            "ct5": round(ct5, 1),
+            "ct3": round(ct3, 1),
+            "bbfs": round(bbfs, 1)
+        }
 
     def get_confidence_score(self) -> int:
         score = 68 + len(set(self.get_ct_5d())) * 5 + len(set(self.get_ct_3d())) * 6
