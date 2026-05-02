@@ -124,22 +124,22 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                     with col_a:
                         st.subheader("KOP")
                         kop_text = predictor.get_unique_8d(
-                            predictor.get_top_by_position('KOP',8),
-                            predictor.get_top_by_position('KOP',8,True)
+                            predictor.get_top_by_position('KOP',9),
+                            predictor.get_top_by_position('KOP',9,True)
                         )
                         st.code(kop_text, language=None)
                     with col_b:
                         st.subheader("KEPALA")
                         kep_text = predictor.get_unique_8d(
-                            predictor.get_top_by_position('KEPALA',8),
-                            predictor.get_top_by_position('KEPALA',8,True)
+                            predictor.get_top_by_position('KEPALA',9),
+                            predictor.get_top_by_position('KEPALA',9,True)
                         )
                         st.code(kep_text, language=None)
                     with col_c:
                         st.subheader("EKOR")
                         eko_text = predictor.get_unique_8d(
-                            predictor.get_top_by_position('EKOR',8),
-                            predictor.get_top_by_position('EKOR',8,True)
+                            predictor.get_top_by_position('EKOR',9),
+                            predictor.get_top_by_position('EKOR',9,True)
                         )
                         st.code(eko_text, language=None)
                 
