@@ -169,43 +169,56 @@ class TogelPredictor:
         return ''.join(combined[:8])
 
     # ====================== BBFS IMPROVED ======================
-    def generate_bbfs_8d(self) -> List[str]:
+        def generate_bbfs_8d(self) -> List[str]:
+        """BBFS UPGRADE - Hybrid High Accuracy"""
         if 'bbfs_improved' in self._cache:
             return self._cache['bbfs_improved']
-       
-        top_global = self.get_top_digits(10)
+
+        top_global = self.get_top_digits(12)          # lebih banyak kandidat
         mistik = self.get_mistik(top_global)['all_mistik']
         index_r = self.get_index(top_global)
         ct5_set = set(self.get_ct_5d())
         ct3_set = set(self.get_ct_3d())
-        strong_pairs = [p[0] for p in self.get_strong_pairs()]
 
+        # Recency sangat agresif
         freq_recency = Counter()
-        for i, num in enumerate(self.results[:120]):
-            weight = 6.0 * (0.955 ** i)
+        for i, num in enumerate(self.results[:150]):   # 150 draw terakhir
+            weight = 10.0 * (0.94 ** i)                # decay lebih kuat
             for d in num:
                 freq_recency[d] += weight
 
+        # Position Boost Kuat
         ekor_freq = self._get_digit_counter('EKOR')
         kepala_freq = self._get_digit_counter('KEPALA')
+
+        strong_pairs = [p[0] for p in self.get_strong_pairs()]
 
         score = Counter()
         for d in '0123456789':
             s = 0.0
-            s += freq_recency[d] * 3.2
-            s += ekor_freq[d] * 2.1
-            s += kepala_freq[d] * 1.6
-            s += 55 if d in ct5_set else 0
-            s += 38 if d in ct3_set else 0
-            s += 32 if d in mistik else 0
-            s += 26 if d in index_r else 0
-            s += 22 if d in top_global[:4] else 14 if d in top_global else 0
+            s += freq_recency[d] * 4.5                    # recency sangat dominan
+            s += ekor_freq[d] * 3.8                       # boost ekor tinggi
+            s += kepala_freq[d] * 3.2                     # boost kepala
+            s += 85 if d in ct5_set else 0
+            s += 55 if d in ct3_set else 0
+            s += 40 if d in mistik else 0
+            s += 35 if d in index_r else 0
+            s += 30 if d in top_global[:5] else 18 if d in top_global else 0
+
+            # Pair Bonus
             for pair in strong_pairs:
                 if d in pair:
-                    s += 18
+                    s += 25
+
+            # Bonus jika sering muncul di 2D/3D
+            if d in ''.join(self.generate_top_2d_filtered(40)[:20]):
+                s += 22
+
             score[d] = round(s, 1)
 
-        result = [d for d, sc in score.most_common(25) if sc >= 48][:8]
+        # Ambil top 8 + sorting ketat
+        result = [d for d, sc in score.most_common(30) if sc >= 65][:8]
+
         if len(result) < 8:
             for d in '0123456789':
                 if d not in result and len(result) < 8:
@@ -328,7 +341,7 @@ class TogelPredictor:
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [x[0] for x in candidates[:limit]]
 
-    def analyze_history(self, limit: int = 10) -> List[Dict]:
+        def analyze_history(self, limit: int = 10) -> List[Dict]:
         if len(self.raw_data) < limit + 5:
             return []
         
@@ -339,44 +352,35 @@ class TogelPredictor:
             pred = TogelPredictor(train)
             actual = test.get('result', '')
             
-            if len(actual) != 4:
-                continue
+            if len(actual) != 4: continue
 
-            # === BBFS dengan Plus One ===
             bbfs_8d = pred.generate_bbfs_8d()
             plus_one = pred.generate_bbfs_plus_one(bbfs_8d)['plus']
-            bbfs_full_set = set(bbfs_8d + [plus_one])   # 9 digit
+            bbfs_full = set(bbfs_8d + [plus_one])
 
-            kepala_actual = actual[2]
-            ekor_actual = actual[3]
+            kepala = actual[2]
+            ekor = actual[3]
 
-            kepala_hit = kepala_actual in bbfs_full_set
-            ekor_hit = ekor_actual in bbfs_full_set
-            total_hits = sum(1 for d in actual if d in bbfs_full_set)
+            kepala_hit = kepala in bbfs_full
+            ekor_hit = ekor in bbfs_full
+            total_hits = sum(1 for d in actual if d in bbfs_full)
 
-            # Logika Pass sesuai permintaanmu
-            bbfs_pass = (kepala_hit and ekor_hit and total_hits >= 2)
+            bbfs_pass = kepala_hit and ekor_hit and total_hits >= 2
 
             history.append({
                 'tanggal': str(test.get('tanggal', ''))[:10],
                 'result': actual,
-                
-                # Metrik Utama
                 'ct5_hit': any(d in actual for d in pred.get_ct_5d()),
                 'ct3_hit': any(d in actual for d in pred.get_ct_3d()),
-                'bbfs_hit': bbfs_pass,                    # Logika baru
-                
-                # Detail BBFS
+                'bbfs_hit': bbfs_pass,
                 'bbfs_kepala_hit': kepala_hit,
                 'bbfs_ekor_hit': ekor_hit,
                 'bbfs_total_hits': total_hits,
                 'bbfs_8d': ''.join(bbfs_8d),
                 'bbfs_plus': plus_one,
-                
-                # Metrik Posisi
-                'kop_hit': actual[1] in pred.get_top_by_position('KOP', 8, True),
-                'kepala_hit': kepala_actual in pred.get_top_by_position('KEPALA', 8, True),
-                'ekor_hit': ekor_actual in set(bbfs_8d + list(pred.get_ct_5d()) + list(pred.get_ct_3d())),
+                'kop_hit': actual[1] in pred.get_top_by_position('KOP',8,True),
+                'kepala_hit': kepala in pred.get_top_by_position('KEPALA',8,True),
+                'ekor_hit': ekor in set(bbfs_8d + list(pred.get_ct_5d()) + list(pred.get_ct_3d())),
             })
         return history
 
