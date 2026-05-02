@@ -1,6 +1,6 @@
 """
-🏆 FINAL PREDICTOR - FULL ENHANCED VERSION (FIXED)
-Error 'get_unique_8d' sudah diperbaiki
+predictor_full.py
+🏆 FULL VERSION - Semua method asli + BBFS Optimized + Logika Pass Kepala+Ekor
 """
 
 import os
@@ -123,7 +123,6 @@ class TogelPredictor:
         self._cache['ct3'] = result
         return result
 
-    # ====================== HELPER ======================
     def get_strong_pairs(self):
         if self._strong_pairs is not None: return self._strong_pairs
         pairs = Counter()
@@ -134,6 +133,77 @@ class TogelPredictor:
                     pairs[pair] += 1
         self._strong_pairs = pairs.most_common(20)
         return self._strong_pairs
+
+    # ====================== BBFS OPTIMIZED ======================
+    def generate_bbfs_8d(self) -> List[str]:
+        if 'bbfs_improved' in self._cache:
+            return self._cache['bbfs_improved']
+
+        top_global = self.get_top_digits(12)
+        mistik = self.get_mistik(top_global)['all_mistik']
+        index_r = self.get_index(top_global)
+        ct5_set = set(self.get_ct_5d())
+        ct3_set = set(self.get_ct_3d())
+
+        freq_recency = Counter()
+        for i, num in enumerate(self.results[:150]):
+            weight = 10.0 * (0.94 ** i)
+            for d in num:
+                freq_recency[d] += weight
+
+        ekor_freq = self._get_digit_counter('EKOR')
+        kepala_freq = self._get_digit_counter('KEPALA')
+        strong_pairs = [p[0] for p in self.get_strong_pairs()]
+
+        score = Counter()
+        for d in '0123456789':
+            s = 0.0
+            s += freq_recency[d] * 4.5
+            s += ekor_freq[d] * 3.8
+            s += kepala_freq[d] * 3.2
+            s += 85 if d in ct5_set else 0
+            s += 55 if d in ct3_set else 0
+            s += 40 if d in mistik else 0
+            s += 35 if d in index_r else 0
+            s += 30 if d in top_global[:5] else 18 if d in top_global else 0
+
+            for pair in strong_pairs:
+                if d in pair:
+                    s += 25
+
+            score[d] = round(s, 1)
+
+        result = [d for d, sc in score.most_common(30) if sc >= 65][:8]
+
+        if len(result) < 8:
+            for d in '0123456789':
+                if d not in result and len(result) < 8:
+                    result.append(d)
+
+        self._cache['bbfs_improved'] = result
+        return result
+
+    def generate_bbfs_plus_one(self, bbfs_8d: List[str]) -> Dict[str, Any]:
+        used = set(bbfs_8d)
+        freq = self._get_digit_counter()
+        candidates = [(d, freq.get(d, 0)) for d in '0123456789' if d not in used]
+        plus = max(candidates, key=lambda x: x[1])[0] if candidates else '0'
+        return {'bbfs': bbfs_8d, 'plus': plus}
+
+    def get_unique_8d(self, list1: List[str], list2: List[str]) -> str:
+        seen = set()
+        combined = []
+        for d in list1 + list2:
+            if d not in seen:
+                seen.add(d)
+                combined.append(d)
+            if len(combined) == 8:
+                break
+        for i in range(10):
+            d = str(i)
+            if d not in seen and len(combined) < 8:
+                combined.append(d)
+        return ''.join(combined[:8])
 
     def _get_weighted_candidates(self, digits: List[str], boost: List[str] = None) -> List[tuple]:
         freq = self._get_digit_counter()
@@ -152,89 +222,7 @@ class TogelPredictor:
                 return digit
         return candidates[-1][0]
 
-    def get_unique_8d(self, list1: List[str], list2: List[str]) -> str:
-        """Method yang menyebabkan error - sudah ditambahkan"""
-        seen = set()
-        combined = []
-        for d in list1 + list2:
-            if d not in seen:
-                seen.add(d)
-                combined.append(d)
-            if len(combined) == 8:
-                break
-        for i in range(10):
-            d = str(i)
-            if d not in seen and len(combined) < 8:
-                combined.append(d)
-        return ''.join(combined[:8])
-
-    # ====================== BBFS IMPROVED ======================
-        def generate_bbfs_8d(self) -> List[str]:
-        """BBFS UPGRADE - Hybrid High Accuracy"""
-        if 'bbfs_improved' in self._cache:
-            return self._cache['bbfs_improved']
-
-        top_global = self.get_top_digits(12)          # lebih banyak kandidat
-        mistik = self.get_mistik(top_global)['all_mistik']
-        index_r = self.get_index(top_global)
-        ct5_set = set(self.get_ct_5d())
-        ct3_set = set(self.get_ct_3d())
-
-        # Recency sangat agresif
-        freq_recency = Counter()
-        for i, num in enumerate(self.results[:150]):   # 150 draw terakhir
-            weight = 10.0 * (0.94 ** i)                # decay lebih kuat
-            for d in num:
-                freq_recency[d] += weight
-
-        # Position Boost Kuat
-        ekor_freq = self._get_digit_counter('EKOR')
-        kepala_freq = self._get_digit_counter('KEPALA')
-
-        strong_pairs = [p[0] for p in self.get_strong_pairs()]
-
-        score = Counter()
-        for d in '0123456789':
-            s = 0.0
-            s += freq_recency[d] * 4.5                    # recency sangat dominan
-            s += ekor_freq[d] * 3.8                       # boost ekor tinggi
-            s += kepala_freq[d] * 3.2                     # boost kepala
-            s += 85 if d in ct5_set else 0
-            s += 55 if d in ct3_set else 0
-            s += 40 if d in mistik else 0
-            s += 35 if d in index_r else 0
-            s += 30 if d in top_global[:5] else 18 if d in top_global else 0
-
-            # Pair Bonus
-            for pair in strong_pairs:
-                if d in pair:
-                    s += 25
-
-            # Bonus jika sering muncul di 2D/3D
-            if d in ''.join(self.generate_top_2d_filtered(40)[:20]):
-                s += 22
-
-            score[d] = round(s, 1)
-
-        # Ambil top 8 + sorting ketat
-        result = [d for d, sc in score.most_common(30) if sc >= 65][:8]
-
-        if len(result) < 8:
-            for d in '0123456789':
-                if d not in result and len(result) < 8:
-                    result.append(d)
-
-        self._cache['bbfs_improved'] = result
-        return result
-
-    # ====================== METHOD ASLI LAINNYA ======================
-    def generate_bbfs_plus_one(self, bbfs_8d: List[str]) -> Dict[str, Any]:
-        used = set(bbfs_8d)
-        freq = self._get_digit_counter()
-        candidates = [(d, freq.get(d, 0)) for d in '0123456789' if d not in used]
-        plus = max(candidates, key=lambda x: x[1])[0] if candidates else '0'
-        return {'bbfs': bbfs_8d, 'plus': plus}
-
+    # ====================== TOP 2D, 3D, 4D ======================
     def get_top_by_position(self, position: str, limit: int = 8, use_mistik: bool = False) -> List[str]:
         if len(self.results) < 10:
             return [str(i) for i in range(10)][:limit]
@@ -341,17 +329,16 @@ class TogelPredictor:
         candidates.sort(key=lambda x: x[1], reverse=True)
         return [x[0] for x in candidates[:limit]]
 
-        def analyze_history(self, limit: int = 10) -> List[Dict]:
+    # ====================== HISTORY ANALYSIS ======================
+    def analyze_history(self, limit: int = 10) -> List[Dict]:
         if len(self.raw_data) < limit + 5:
             return []
-        
         history = []
         for i in range(limit):
             test = self.raw_data[i]
             train = self.raw_data[i+1:i+11]
             pred = TogelPredictor(train)
             actual = test.get('result', '')
-            
             if len(actual) != 4: continue
 
             bbfs_8d = pred.generate_bbfs_8d()
@@ -368,7 +355,7 @@ class TogelPredictor:
             bbfs_pass = kepala_hit and ekor_hit and total_hits >= 2
 
             history.append({
-                'tanggal': str(test.get('tanggal', ''))[:10],
+                'tanggal': str(test.get('tanggal',''))[:10],
                 'result': actual,
                 'ct5_hit': any(d in actual for d in pred.get_ct_5d()),
                 'ct3_hit': any(d in actual for d in pred.get_ct_3d()),
@@ -376,8 +363,6 @@ class TogelPredictor:
                 'bbfs_kepala_hit': kepala_hit,
                 'bbfs_ekor_hit': ekor_hit,
                 'bbfs_total_hits': total_hits,
-                'bbfs_8d': ''.join(bbfs_8d),
-                'bbfs_plus': plus_one,
                 'kop_hit': actual[1] in pred.get_top_by_position('KOP',8,True),
                 'kepala_hit': kepala in pred.get_top_by_position('KEPALA',8,True),
                 'ekor_hit': ekor in set(bbfs_8d + list(pred.get_ct_5d()) + list(pred.get_ct_3d())),
@@ -386,22 +371,15 @@ class TogelPredictor:
 
     def calculate_accuracy(self, history: List[Dict]) -> Dict[str, float]:
         if not history:
-            return {"overall": 0.0, "bbfs": 0.0}
-        
+            return {"overall": 0.0}
         ct5 = sum(1 for h in history if h['ct5_hit']) / len(history) * 100
         ct3 = sum(1 for h in history if h['ct3_hit']) / len(history) * 100
         bbfs = sum(1 for h in history if h['bbfs_hit']) / len(history) * 100
-        
-        return {
-            "overall": round((ct5 + ct3 + bbfs) / 3, 1),
-            "ct5": round(ct5, 1),
-            "ct3": round(ct3, 1),
-            "bbfs": round(bbfs, 1)
-        }
+        return {"overall": round((ct5 + ct3 + bbfs) / 3, 1)}
 
     def get_confidence_score(self) -> int:
-        score = 68 + len(set(self.get_ct_5d())) * 5 + len(set(self.get_ct_3d())) * 6
-        return min(99, max(58, score))
+        score = 70 + len(set(self.get_ct_5d())) * 5 + len(set(self.get_ct_3d())) * 6
+        return min(99, max(60, score))
 
 
 # ================== DATABASE HELPER ==================
