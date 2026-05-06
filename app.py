@@ -45,8 +45,8 @@ with st.sidebar:
     st.caption("💡 Semakin banyak data = semakin stabil prediksi")
 
 # ================== MAIN BUTTON ==================
-if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width=True):
-    with st.spinner("Mengambil data Turso DB & menganalisa... Mohon tunggu"):
+if st.button("🚀 CEK PREDIKSI SEKARANG", type="primary", use_container_width=True):
+    with st.spinner("Mengambil data & menganalisa... Mohon tunggu"):
         try:
             data = asyncio.run(get_pasaran_data(market_name, data_limit))
             
@@ -77,7 +77,7 @@ if st.button("🚀 MULAI PREDIKSI SEKARANG", type="primary", use_container_width
                 # ================== TABS ==================
                 tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "🔥 TOP 2D", "🔥 TOP 3D", "🔥 TOP 4D", 
-                    "📍 Posisi Lengkap", "📜 History Analisis"
+                    "📍 Posisi Lengkap", "📜 Analisa History"
                 ])
                 
                 # ================== TOP 2D ==================
@@ -183,7 +183,7 @@ Semoga Beruntung! 🍀
 """
 
                 st.download_button(
-                    label="💾 Download Semua Prediksi sebagai TXT",
+                    label="💾 Download Prediksi sebagai TXT",
                     data=content,
                     file_name=f"PREDIKSI_{market_name}_{timestamp}.txt",
                     mime="text/plain",
